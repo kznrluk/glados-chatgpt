@@ -3,3 +3,6 @@ phonemizer
 inflect
 unidecode
 scipy
+fastapi
+openai
+uvicorn

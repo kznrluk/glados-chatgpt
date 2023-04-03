@@ -9,7 +9,7 @@ import uuid
 import openai
 import random
 
-openai.api_key = "sk-"
+openai.api_key = os.environ.get('OPEN_API_KEY')
 
 def get_random_lines(num_lines):
     with open('serif.txt', 'r') as f:
@@ -61,11 +61,13 @@ async def api_generate(request: Request):
     data_file = os.path.join(data_path, "data.json")
     wav_file = os.path.join(data_path, "output.wav")
 
+    completion = ask_chatgpt(text)
+    print(completion)
+
+    content["response"] = completion
     with open(data_file, "w") as f:
         json.dump(content, f)
 
-    completion = ask_chatgpt(text)
-    print(completion)
     generate_glados_tts(completion, wav_file)
 
     return JSONResponse(content={"text": completion, "wav": f"{ulid_str}/output.wav"})
