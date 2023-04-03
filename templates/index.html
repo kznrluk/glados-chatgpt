@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GLaDOS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #F8FAFB;
+            color: #292B31;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        #tts-container {
+            width: 80%;
+            max-width: 600px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            border-radius: 5px;
+        }
+
+        #tts-form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        textarea {
+            resize: none;
+            height: 60px;
+            font-family: monospace;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background-color: #292B31;
+            color: #F8FAFB;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #40434A;
+        }
+
+        #audio-container {
+            margin-top: 20px;
+        }
+
+        #text {
+            font-family: monospace;
+            height: 150px;
+            width: 100%;
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            overflow-y: auto;
+            border: 1px solid #292B31;
+            background-color: #292B31;
+            color: #F8FAFB;
+            padding: 10px;
+            border-radius: 5px;
+            box-sizing: border-box;
+            margin-top: 20px;
+        }
+
+        #link {
+
+        }
+    </style>
+</head>
+<body>
+<div id="tts-container">
+    <form id="tts-form">
+        <label for="text-input">Enter questions for AI</label>
+        <textarea id="text-input" rows="4" cols="50" maxlength="256" required>What is Aperture Science?</textarea>
+        <button type="submit" id="submit">Ask</button>
+    </form>
+    <div id="audio-container">
+    </div>
+    <div id="text">Aperture Science is the premier provider of scientific and technological research and development. Our cutting-edge technologies and ground-breaking research have led to countless advances in fields such as portal physics, artificial intelligence, and more. Our mission is simple: to make the world a better place through science. And by "better", we mean "better for us".</div>
+    <div id="link">
+        <a href="http"GitHub
+    </div>
+</div>
+<script>
+    const audioContainer = document.getElementById('audio-container');
+
+    let audio = null;
+    const init = async () => {
+        audio = new Audio(`/data/default/output.wav`);
+        audioContainer.innerHTML = '';
+        audioContainer.appendChild(audio);
+        audio.controls = true;
+        audio.autoplay = true;
+        audio.volume = 0.5;
+    }
+
+    init()
+
+    const form = document.getElementById('tts-form');
+    const submit = document.getElementById('submit');
+
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        submit.disabled = true
+        submit.innerText = "Asking..."
+        const textView = document.getElementById('text')
+        textView.innerText = ""
+
+        const textInput = document.getElementById('text-input');
+        const text = textInput.value;
+
+        const response = await fetch('/api/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ text })
+        });
+
+        const data = await response.json();
+        submit.innerText = "Ask";
+
+        audio.src = `/data/${data.wav}`
+
+        let idx = 0;
+        audio.addEventListener('canplaythrough', () => {
+            const i = setInterval(() => {
+                if (idx >= data.text.split(" ").length) {
+                    clearInterval(i)
+                    return;
+                }
+
+                textView.innerText = data.text.split(" ").filter((_, n) => n <= idx).join(" ")
+                idx++;
+            }, audio.duration * 1000 / data.text.split(" ").length)
+        });
+
+        audio.addEventListener('ended', () => {
+            submit.disabled = false
+        })
+    });
+</script>
+</body>
+</html>
